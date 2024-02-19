@@ -5,7 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/output.css">
-    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <title>Login</title>
 </head>
 
 <body>
@@ -28,27 +29,107 @@
                 </div>
             </div>
             <div class="flex justify-center">
-                <button onclick="login()" type="button" class="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Login</button>
+                <button onclick="login()" type="button"
+                    class="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Login</button>
             </div>
         </form>
     </main>
     <script>
+        async function getDashboard() {
+            const token = localStorage.getItem('token');
+            const res = await axios.get('/api/dashboard', {
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                }
+            });
+            console.log(res.data);
+            if (res.data) {
+                // replace the current page with the html sent from the server
+                const title = document.querySelector('title');
+                title.innerHTML = 'Dashboard';
+                const body = document.querySelector('body');
+                body.innerHTML = res.data;
+                history.pushState({}, '', '/dashboard');
+            }
+        }
+        async function getPrices() {
+            const token = localStorage.getItem('token');
+            console.log(token);
+            const res = await axios.get('/api/prices', {
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                }
+            });
+            console.log(res.data);
+            if (res.data) {
+                // replace the current page with the html sent from the server
+                const title = document.querySelector('title');
+                title.innerHTML = 'Prices';
+                const body = document.querySelector('body');
+                body.innerHTML = res.data;
+                history.pushState({}, '', '/prices');
+            }
+        }
+        async function getSettings() {
+            const token = localStorage.getItem('token');
+            console.log(token);
+            const res = await axios.get('/api/settings', {
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                }
+            });
+            console.log(res.data);
+            if (res.data) {
+                // replace the current page with the html sent from the server
+                const title = document.querySelector('title');
+                title.innerHTML = 'Settings';
+                const body = document.querySelector('body');
+                body.innerHTML = res.data;
+                history.pushState({}, '', '/settings');
+            }
+        }
         async function login() {
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
-            const res = await fetch('/api/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
+            try {
+                const res = await axios.post('/api/login', {
                     username: username,
                     password: password
-                })
-            });
-            const obj = await res.json();
-            console.log(obj);
+                });
+                const obj = res.data;
+                console.log(obj);
+                if (res.data.success) {
+                    const token = res.data.tokenValue;
+                    localStorage.setItem('token', token);
+                    getDashboard(token);
+                }
+            } catch (err) {
+                console.error(err);
+            } finally {
+                // clear inputs
+                document.getElementById('username').value = '';
+                document.getElementById('password').value = '';
+            }
         }
+
+        function onLoad() {
+            const token = localStorage.getItem('token');
+            if (token) {
+                getDashboard(token);
+            }
+        }
+        onLoad();
+
+        window.addEventListener('popstate', function (event) {
+            console.log('location: ' + document.location);
+            if (document.location.pathname === '/dashboard') {
+                getDashboard();
+            } else if (document.location.pathname === '/prices') {
+                getPrices();
+            } else if (document.location.pathname === '/settings') {
+                getSettings();
+            }
+        });
     </script>
 
 </body>
